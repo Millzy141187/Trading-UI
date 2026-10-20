@@ -2,8 +2,9 @@
  * Settings tab: connection, trading defaults, appearance and data management.
  */
 
-import { el, fmt, toast, modal, confirmDialog, downloadText } from "../util.js";
+import { el, fmt, toast, modal, confirmDialog, promptDialog, downloadText } from "../util.js";
 import * as api from "../api.js";
+import * as auth from "../auth.js";
 import { settings, journal, watchlist as wlStore, alerts as alertStore, exportAll, importAll, DEFAULT_SETTINGS, on } from "../store.js";
 
 let root = null;
@@ -15,6 +16,8 @@ export function renderSettingsTab(container) {
 
   container.append(
     el("div", { class: "settings-grid" }, [
+      buildProfileCard(),
+      buildTradingViewCard(),
       buildConnectionCard(),
       buildTradingDefaults(),
       buildAppearance(),
@@ -81,6 +84,94 @@ function selectControl(key, options) {
     sel.append(el("option", { value, text: label, selected: settings.get()[key] === value }));
   }
   return sel;
+}
+
+/* --------------------------------- profile -------------------------------- */
+
+function buildProfileCard() {
+  const profile = auth.getProfile();
+  return el("div", { class: "panel" }, [
+    el("div", { class: "panel-head" }, [el("h3", { text: "Profile" })]),
+    el("div", { class: "panel-body" }, [
+      row("Signed in as", "Local profile on this device", el("span", { class: "pill pill-neutral", text: profile?.name || "—" })),
+      row("Change PIN", "Lock this profile on shared computers (4–10 digits, or blank to remove)", el("button", {
+        class: "btn btn-sm",
+        text: "Set PIN",
+        onclick: async () => {
+          const value = await promptDialog({
+            title: "Profile PIN",
+            label: "New PIN (blank to remove)",
+            inputType: "password",
+            confirmText: "Save PIN",
+          });
+          if (value === null) return; // cancelled
+          const pin = value.trim();
+          if (pin && !/^\d{4,10}$/.test(pin)) {
+            toast("PIN must be 4–10 digits", "warn");
+            return;
+          }
+          await auth.setPin(profile.id, pin);
+          toast(pin ? "PIN updated" : "PIN removed", "success");
+        },
+      })),
+      row("Sign out", "Return to the start screen on this device", el("button", {
+        class: "btn btn-sm btn-danger",
+        text: "Sign out",
+        onclick: () => {
+          auth.signOut();
+          location.reload();
+        },
+      })),
+    ]),
+  ]);
+}
+
+/* ------------------------------- TradingView ------------------------------ */
+
+function buildTradingViewCard() {
+  const profile = auth.getProfile();
+  const connected = Boolean(profile?.tv?.connected);
+  return el("div", { class: "panel" }, [
+    el("div", { class: "panel-head" }, [el("h3", { text: "TradingView" })]),
+    el("div", { class: "panel-body" }, [
+      row(
+        "Saved indicators",
+        connected
+          ? `Connected ${profile.tv.connectedAt ? fmt.relative(profile.tv.connectedAt) : ""} — use the TradingView chart engine to reach your saved scripts & layouts`
+          : "Connect your TradingView account to use your saved indicators & layouts in the chart",
+        el("span", { class: `pill ${connected ? "pill-buy" : "pill-warn"}`, text: connected ? "Connected" : "Not connected" }),
+      ),
+      el("div", { class: "setting-row" }, [
+        el("div", {}, [
+          el("div", { class: "label", text: connected ? "Reconnect / open sign-in" : "Connect with TradingView" }),
+          el("div", { class: "sub", text: "Opens TradingView's own sign-in page in a new tab — we never see your TradingView password. TradingView has no third-party OAuth; the embedded chart picks up your browser session." }),
+        ]),
+        el("div", { class: "control" }, [el("div", { class: "actions" }, [
+          el("button", {
+            class: "btn btn-sm btn-primary",
+            text: "Connect",
+            onclick: () => {
+              auth.markTradingViewConnected();
+              window.open("https://www.tradingview.com/accounts/signin/", "_blank", "noopener");
+              renderSettingsTab(root);
+              toast("Sign in on the TradingView tab, then switch the chart to the TradingView engine to load your saved indicators.", "info", 9000);
+            },
+          }),
+          connected
+            ? el("button", {
+                class: "btn btn-sm btn-danger",
+                text: "Disconnect",
+                onclick: () => {
+                  auth.clearTradingView();
+                  renderSettingsTab(root);
+                  toast("TradingView disconnected", "info");
+                },
+              })
+            : null,
+        ])]),
+      ]),
+    ]),
+  ]);
 }
 
 /* ------------------------------- connection ------------------------------- */

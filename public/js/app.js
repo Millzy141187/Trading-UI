@@ -8,6 +8,8 @@
 
 import { $, fmt, toast } from "./util.js";
 import * as api from "./api.js";
+import * as auth from "./auth.js";
+import { renderStartScreen } from "./start-screen.js";
 import { settings, watchlist, alerts, on } from "./store.js";
 import * as tradeTab from "./tabs/trade.js";
 import * as watchlistTab from "./tabs/watchlist.js";
@@ -307,6 +309,43 @@ async function tick() {
   }
 }
 
+/* ================================ start gate ============================== */
+
+function showStartScreen() {
+  const wrap = $("#start-wrap");
+  const main = $("#app-main");
+  const header = $(".app-header");
+  const footer = $("#app-footer");
+  if (!wrap) return;
+  if (header) header.hidden = true;
+  if (main) main.hidden = true;
+  if (footer) footer.hidden = true;
+  wrap.hidden = false;
+  renderStartScreen(wrap, { onEnter: () => {} });
+}
+
+function updateUserChip() {
+  const profile = auth.getProfile();
+  const chip = $("#user-chip");
+  if (!chip) return;
+  if (!profile) {
+    chip.hidden = true;
+    return;
+  }
+  chip.hidden = false;
+  const nameEl = $("#user-name");
+  const avatarEl = $("#user-avatar");
+  if (nameEl) nameEl.textContent = profile.name;
+  if (avatarEl) avatarEl.textContent = (profile.name || "?").slice(0, 1).toUpperCase();
+}
+
+function wireSignOut() {
+  $("#signout-btn")?.addEventListener("click", () => {
+    auth.signOut();
+    location.reload();
+  });
+}
+
 /* ================================== boot ================================== */
 
 function applyTheme() {
@@ -314,6 +353,13 @@ function applyTheme() {
 }
 
 async function boot() {
+  // start-screen gate: no active profile → show the login page only
+  if (!auth.currentProfileId() || !auth.getProfile()) {
+    showStartScreen();
+    return;
+  }
+  updateUserChip();
+  wireSignOut();
   applyTheme();
   watchlist.init(api.defaultWatchlist());
   wireTabs();
@@ -345,6 +391,14 @@ async function boot() {
   updateAlertBadge();
 
   startPolling();
+
+  // TradingView connect handoff: switch to the Supercharts widget so the
+  // signed-in TradingView session (opened in the other tab) exposes the
+  // user's saved indicators & layouts.
+  if (auth.consumeTradingViewConnect()) {
+    settings.set({ chartEngine: "tv" });
+    toast("TradingView connect: finish signing in on the TradingView tab, then use the chart's Indicators menu for your saved scripts.", "info", 12000);
+  }
 }
 
 boot().catch((err) => {

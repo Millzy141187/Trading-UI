@@ -15,6 +15,12 @@ page.on("pageerror", (e) => errors.push(String(e)));
 
 try {
   await page.goto(BASE, { waitUntil: "networkidle", timeout: 20000 });
+  // sign in through the start screen when no session is remembered
+  const startVisible = await page.locator("#start-wrap .start-card").isVisible().catch(() => false);
+  if (startVisible) {
+    await page.locator(".start-card .input-lg").first().fill("E2E Trader");
+    await page.locator(".start-card button", { hasText: /^sign in$/i }).first().click();
+  }
   await page.waitForSelector("#chart-host canvas", { timeout: 15000 });
 
   /* ---- 1. add an indicator (RSI) ---- */

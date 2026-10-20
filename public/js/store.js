@@ -4,8 +4,12 @@
  */
 
 import { uid } from "./util.js";
+import { activeStoragePrefix } from "./auth.js";
 
 const NS = "td.v1.";
+
+/** Per-profile storage scope ("td.v1.<profileId>."), legacy "td.v1." when logged out. */
+const scoped = (key) => activeStoragePrefix() + key;
 
 const DEFAULT_SETTINGS = {
   theme: "dark",
@@ -27,7 +31,9 @@ const DEFAULT_SETTINGS = {
 
 function read(key, fallback) {
   try {
-    const raw = localStorage.getItem(NS + key);
+    let raw = localStorage.getItem(scoped(key));
+    // migrate data saved before profiles existed
+    if (raw === null && activeStoragePrefix() !== NS) raw = localStorage.getItem(NS + key);
     if (!raw) return fallback;
     return JSON.parse(raw);
   } catch {
@@ -37,7 +43,7 @@ function read(key, fallback) {
 
 function write(key, value) {
   try {
-    localStorage.setItem(NS + key, JSON.stringify(value));
+    localStorage.setItem(scoped(key), JSON.stringify(value));
   } catch (err) {
     console.warn("storage write failed", key, err);
   }
@@ -277,7 +283,7 @@ export const demo = {
     return next;
   },
   reset() {
-    localStorage.removeItem(NS + "demo");
+    localStorage.removeItem(scoped("demo"));
     emit("demo:reset");
   },
 };

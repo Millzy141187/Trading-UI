@@ -45,6 +45,11 @@
       </nav>
 
       <div class="header-right">
+        <div class="user-chip" id="user-chip" title="Signed in profile">
+          <span class="user-avatar" id="user-avatar">?</span>
+          <span class="user-name" id="user-name">—</span>
+          <button class="btn btn-sm btn-ghost" id="signout-btn" title="Sign out">Sign out</button>
+        </div>
         <div class="account-pill" id="account-pill" title="Account balance / equity / open P&amp;L">
           <span class="acc-item"><em>Balance</em><b id="acc-balance">—</b></span>
           <span class="acc-item"><em>Equity</em><b id="acc-equity">—</b></span>
@@ -58,7 +63,9 @@
       </div>
     </header>
 
-    <main class="app-main">
+    <section class="start-wrap" id="start-wrap" hidden></section>
+
+    <main class="app-main" id="app-main">
       <section class="tab active" id="tab-trade" role="tabpanel"></section>
       <section class="tab" id="tab-watchlist" role="tabpanel" hidden></section>
       <section class="tab" id="tab-journal" role="tabpanel" hidden></section>
@@ -66,7 +73,7 @@
       <section class="tab" id="tab-settings" role="tabpanel" hidden></section>
     </main>
 
-    <footer class="app-footer">
+    <footer class="app-footer" id="app-footer">
       <span>
         Charts powered by
         <a href="https://www.tradingview.com/lightweight-charts/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>

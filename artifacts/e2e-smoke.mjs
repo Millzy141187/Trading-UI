@@ -86,12 +86,33 @@ async function gotoTab(p, name) {
   await p.waitForSelector(`#tab-${name}.active`, { timeout: 5000 });
 }
 
+/** Sign in through the start screen (no-op when a remembered session exists). */
+async function ensureSignedIn(p) {
+  await p.goto(BASE, { waitUntil: "networkidle", timeout: 20000 });
+  const startVisible = await p.locator("#start-wrap .start-card").isVisible().catch(() => false);
+  if (!startVisible) return { signedInNow: false };
+  check("start screen login page renders", true);
+  await p.locator(".start-card .input-lg").first().fill("E2E Trader");
+  await p.locator(".start-card button", { hasText: /^sign in$/i }).first().click();
+  await p.waitForSelector(".app-header:visible", { timeout: 15000 });
+  check("sign-in enters the app", true);
+  return { signedInNow: true };
+}
+
+let signedInNow = false;
+
 try {
   /* ---------------- boot ---------------- */
-  await step("page loads with header", async (p) => {
-    await p.goto(BASE, { waitUntil: "networkidle", timeout: 20000 });
-    await p.waitForSelector(".app-header", { timeout: 10000 });
-    check("page loads with header", true);
+  await step("page loads with login gate", async (p) => {
+    const r = await ensureSignedIn(p);
+    signedInNow = r.signedInNow;
+    check("app header visible after login", await p.locator(".app-header").isVisible());
+  });
+
+  await step("user chip shows profile", async (p) => {
+    await p.waitForSelector("#user-chip:not([hidden])", { timeout: 8000 });
+    const name = (await p.textContent("#user-name")).trim();
+    check("user chip shows profile name", name.length > 0, name);
   });
 
   await step("mode pill + account pill resolve", async (p) => {
@@ -221,6 +242,17 @@ try {
     check("tab routing returns to trade", true);
     await p.waitForTimeout(800);
     await p.screenshot({ path: "artifacts/shot-trade.png" });
+  });
+
+  /* ---------------- sign-out returns to login gate ---------------- */
+  await step("sign-out returns to login page", async (p) => {
+    if (!signedInNow) {
+      check("sign-out returns to login page", true, "skipped — session was pre-remembered");
+      return;
+    }
+    await p.locator("#signout-btn").click();
+    await p.waitForSelector("#start-wrap .start-card", { timeout: 15000 });
+    check("sign-out returns to login page", true);
   });
 
   check("no uncaught page errors", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));

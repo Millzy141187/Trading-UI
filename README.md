@@ -10,6 +10,21 @@ A browser trading terminal for stocks, shares, indices, FX, commodities and cryp
 
 Everything works out of the box in **Simulated mode** with realistic generated prices and a full simulated broker (fills, stops, targets, working orders, account balance). Add your Capital.com API credentials to trade a real (demo or live) account.
 
+## Login & profiles
+
+The app opens on a **start screen** where you sign in to a local profile:
+
+- **Name + optional PIN (4–10 digits)** — profiles and PIN hashes live in this browser only (`localStorage`), so each person on a shared college PC keeps their own journal, watchlist, settings and simulated account. Treat the PIN as a convenience lock, not real security; the real gate for a deployed instance is the server-side `APP_ACCESS_CODE` (shown on the login page when the server requires it).
+- **Remember me** keeps you signed in on that device; **Sign out** (top right) returns to the login page.
+- **Skip — explore in simulated mode** jumps straight in with a Guest profile.
+- If profiles vanish after a college PC wipes browser data, export your journal from *Settings → Your data* regularly.
+
+## TradingView: saved indicators
+
+**"Continue with TradingView"** on the login page (or *Settings → TradingView → Connect*) opens TradingView's own sign-in page in a new tab and switches the chart to the **TradingView Widget** engine. Once you are signed in to TradingView in that browser, the embedded Supercharts widget gives you access to your saved indicators and layouts through its Indicators menu.
+
+Honest limitations (checked against TradingView's docs and terms, Oct 2026): TradingView does **not** offer a "Sign in with TradingView" OAuth for third-party apps, and custom Pine scripts cannot be added to the widget programmatically. This app therefore never sees your TradingView password — sign-in happens only on tradingview.com — and the saved-scripts access works inside the TradingView widget itself. For the built-in **Desk Chart** engine, the app ships its own 24 indicators (SMA, EMA, RSI, MACD, Bollinger, ATR, Stochastic, …) with editable parameters.
+
 ## Quick start
 
 ```bash

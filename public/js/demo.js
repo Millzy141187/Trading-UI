@@ -259,9 +259,14 @@ export const RESOLUTION_MS = RESOLUTIONS;
 
 /* ------------------------------- demo broker ------------------------------- */
 
+import { activeStoragePrefix } from "./auth.js";
+
+const demoKey = () => activeStoragePrefix() + "demo";
+
 function brokerState() {
   try {
-    const raw = localStorage.getItem("td.v1.demo");
+    let raw = localStorage.getItem(demoKey());
+    if (raw === null) raw = localStorage.getItem("td.v1.demo"); // pre-profile data
     const parsed = raw ? JSON.parse(raw) : {};
     return {
       balance: parsed.balance ?? 10000,
@@ -277,7 +282,7 @@ function brokerState() {
 }
 
 function brokerSave(s) {
-  localStorage.setItem("td.v1.demo", JSON.stringify(s));
+  localStorage.setItem(demoKey(), JSON.stringify(s));
 }
 
 function newId(prefix) {
