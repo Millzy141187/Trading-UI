@@ -1,0 +1,12 @@
+node_modules/
+secrets/
+*.log
+.DS_Store
+artifacts/capital.collection.json
+artifacts/.pw-profile/
+artifacts/dev.pid
+artifacts/shot-*failure*.png
+.dev.vars
+.env
+.env.*
+!.env.example

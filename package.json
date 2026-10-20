@@ -1,0 +1,14 @@
+{
+  "name": "trading-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TradingDesk - browser trading terminal: charts, indicators, Capital.com execution, trade journal and analytics",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
